@@ -92,9 +92,9 @@ class delete_comment_api extends external_api {
                 'type' => $type
         ));
 
-        list($question, $cm, $context, $studentquiz) = utils::get_data_for_comment_area($params['questionid'], $params['cmid']);
+        list($question, $cm, $context, $studentquiz, $studentquizquestion) = utils::get_data_for_comment_area($params['questionid'], $params['cmid']);
         self::validate_context($context);
-        $commentarea = new container($studentquiz, $question, $cm, $context, null, '', $type);
+        $commentarea = new container($studentquiz, $studentquizquestion, $question, $cm, $context, null, '', $type);
 
         $comment = $commentarea->query_comment_by_id($params['commentid']);
 

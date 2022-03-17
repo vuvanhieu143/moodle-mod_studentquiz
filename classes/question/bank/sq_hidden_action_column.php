@@ -16,7 +16,7 @@
 
 namespace mod_studentquiz\bank;
 
-use core_question\bank\menu_action_column_base;
+use core_question\local\bank\menu_action_column_base;
 
 /**
  * Represent sq_hiden action in studentquiz_bank_view
@@ -33,7 +33,7 @@ class sq_hidden_action_column extends menu_action_column_base {
     /**
      * Initialise Parameters for join
      */
-    protected function init() {
+    protected function init(): void {
         global $USER;
         $this->currentuserid = $USER->id;
         parent::init();
@@ -63,8 +63,8 @@ class sq_hidden_action_column extends menu_action_column_base {
      *
      * @return array 'table_alias' => 'JOIN clause'
      */
-    public function get_extra_joins() {
-        $hidden = "sqh.hidden = 0";
+    public function get_extra_joins(): array {
+        $hidden = "sqq.hidden = 0";
         $mine = "q.createdby = $this->currentuserid";
 
         // Without permission, a user can only see non-hidden question or its their own.
@@ -73,7 +73,7 @@ class sq_hidden_action_column extends menu_action_column_base {
             $sqlextra = "";
         }
 
-        return array('sqh' => "JOIN {studentquiz_question} sqh ON sqh.questionid = q.id $sqlextra");
+        return [];
     }
 
     /**
@@ -82,8 +82,8 @@ class sq_hidden_action_column extends menu_action_column_base {
      * @return array fields required. use table alias 'q' for the question table, or one of the
      * ones from get_extra_joins. Every field requested must specify a table prefix.
      */
-    public function get_required_fields() {
-        return ['sqh.hidden AS sq_hidden'];
+    public function get_required_fields(): array {
+        return ['sqq.hidden AS sq_hidden'];
     }
 
     /**

@@ -519,8 +519,8 @@ function mod_studentquiz_output_fragment_commenteditform($params) {
     }
     $cancelbutton = isset($params['cancelbutton']) ? $params['cancelbutton'] : false;
 
-    list($question, $cm, $context, $studentquiz) = utils::get_data_for_comment_area($params['questionid'], $params['cmid']);
-    $commentarea = new container($studentquiz, $question, $cm, $context, null, '', $params['type']);
+    list($question, $cm, $context, $studentquiz, $studentquizquestion) = utils::get_data_for_comment_area($params['questionid'], $params['cmid']);
+    $commentarea = new container($studentquiz, $studentquizquestion, $question, $cm, $context, null, '', $params['type']);
     $comment = $commentarea->query_comment_by_id($params['commentid']);
     if (!$comment) {
         throw new moodle_exception('invalidcomment', 'studentquiz');

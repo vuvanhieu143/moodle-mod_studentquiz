@@ -102,8 +102,7 @@ class studentquiz_helper {
                   JOIN {context} con ON con.instanceid = sq.coursemodule
                   JOIN {question_categories} qc ON qc.contextid = con.id
                   JOIN {question} q ON q.category = qc.id
-                 WHERE q.hidden = 0
-                       AND q.parent = 0
+                 WHERE q.parent = 0
                        AND sq.coursemodule = :coursemodule
                        AND qc.id = :categoryid";
 

@@ -58,6 +58,9 @@ class container {
     /** @var object|stdClass - Studentquiz data. */
     private $studentquiz;
 
+    /** @var object|stdClass - Studentquiz question data. */
+    private $studentquizquestion;
+
     /** @var string - Basic order to get comments. */
     private $basicorder = 'c.created DESC';
 
@@ -179,6 +182,7 @@ class container {
      * mod_studentquiz_commentarea_list constructor.
      *
      * @param mixed $studentquiz - Student Quiz instance.
+     * @param mixed $studentquizquestion - Student quiz question instance
      * @param \question_definition $question - Question instance.
      * @param mixed $cm - Course Module instance.
      * @param mixed $context - Context instance.
@@ -187,11 +191,12 @@ class container {
      * @param int $type Comment type.
 
      */
-    public function __construct($studentquiz, \question_definition $question, $cm, $context, $user = null,
+    public function __construct($studentquiz, $studentquizquestion, \question_definition $question, $cm, $context, $user = null,
             $sort = '', $type = utils::COMMENT_TYPE_PUBLIC) {
         global $USER, $COURSE;
         $this->studentquiz = $studentquiz;
         $this->question = $question;
+        $this->studentquizquestion = $studentquizquestion;
         $this->cm = $cm;
         $this->context = $context;
         $this->groupid = groups_get_activity_group($cm, true);
@@ -270,6 +275,10 @@ class container {
      */
     public function get_studentquiz() {
         return $this->studentquiz;
+    }
+
+    public function get_studentquiz_question() {
+        return $this->studentquizquestion;
     }
 
     /**
@@ -357,7 +366,7 @@ class container {
                   {$groupjoingsql->joins}";
 
         $sql .= "
-                 WHERE questionid = :questionid AND status <> :status AND sc.type = :type";
+                 WHERE studentquizquestionid = :studentquizquestionid AND status <> :status AND sc.type = :type";
 
         if ($groupjoingsql->wheres) {
             $sql .= "
@@ -365,7 +374,7 @@ class container {
         }
 
         $params = [
-            'questionid' => $this->get_question()->id,
+            'studentquizquestionid' => $this->get_studentquiz_question()->id,
             'status' => utils::COMMENT_HISTORY_DELETE,
             'type' => $this->type
         ];
@@ -385,7 +394,7 @@ class container {
     public function query_comments($numbertoshow, $params) {
         global $DB;
 
-        $params['questionid'] = $this->get_question()->id;
+        $params['studentquizquestionid'] = $this->get_studentquiz_question()->id;
         $params['type'] = $this->type;
 
         // Set limit.
@@ -936,7 +945,7 @@ class container {
      * @return void
      */
     public function update_comment_last_read($time = null): void {
-        $questionprogress = utils::get_studentquiz_progress($this->question->id, $this->user->id, $this->studentquiz->id);
+        $questionprogress = utils::get_studentquiz_progress($this->question->id, $this->user->id, $this->studentquiz->id, $this->studentquizquestion->id);
         if ($this->type == utils::COMMENT_TYPE_PRIVATE) {
             $questionprogress->lastreadprivatecomment = $time ?? time();
         } else if ($this->type == utils::COMMENT_TYPE_PUBLIC) {

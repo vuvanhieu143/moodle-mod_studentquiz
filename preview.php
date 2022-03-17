@@ -51,6 +51,7 @@ $context = context_module::instance($module->id);
 \mod_studentquiz\access\context_override::ensure_permissions_are_right($context);
 
 $studentquiz = mod_studentquiz_load_studentquiz($module->id, $context->id);
+$studentquizquestion = mod_studentquiz_load_studentquiz_question($questionid, $studentquiz->id);
 
 // Lookup question.
 try {
@@ -153,7 +154,7 @@ if ($question) {
 
     echo html_writer::end_tag('form');
 
-    echo $output->render_comment_nav_tabs($cmid, $question, $USER->id, $highlight, $studentquiz->privatecommenting);
+    echo $output->render_comment_nav_tabs($cmid, $question, $studentquizquestion->id, $USER->id, $highlight, $studentquiz->privatecommenting);
 } else {
     echo $OUTPUT->notification(get_string('deletedquestiontext', 'qtype_missingtype'));
 }

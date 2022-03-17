@@ -987,8 +987,7 @@ class mod_studentquiz_overview_renderer extends mod_studentquiz_renderer {
      */
     public function render_questionbank($view) {
         $pagevars = $view->get_qb_pagevar();
-        return $view->get_questionbank()->display('questions', $pagevars['qpage'], $pagevars['qperpage'],
-            $pagevars['cat'], false, $pagevars['showhidden'], $pagevars['qbshowtext']);
+        return $view->get_questionbank()->display($pagevars, 'questions');
     }
 
     /**
@@ -1269,7 +1268,8 @@ EOT;
                 'disabled' => true,
             ]);
             ob_start();
-            question_category_select_menu($addcontexts, false, 0, "{$category->id},{$category->contextid}");
+            \qbank_managecategories\helper::question_category_select_menu($addcontexts, false, 0,
+                    "{$category->id},{$category->contextid}");
             $output .= ob_get_contents();
             ob_end_clean();
         }
@@ -1655,7 +1655,7 @@ class mod_studentquiz_attempt_renderer extends mod_studentquiz_renderer {
         return html_writer::div(
             html_writer::div(
                 html_writer::div(
-                    $renderer->render_comment_area($questionid, $userid, $cmid, $highlight),
+                    $renderer->render_comment_area($questionid, $studentquizquestionid, $userid, $cmid, $highlight),
                     'comment_list'),
                 'comments'
             ), 'studentquiz_behaviour'
@@ -1667,17 +1667,18 @@ class mod_studentquiz_attempt_renderer extends mod_studentquiz_renderer {
      *
      * @param int $cmid Course module id.
      * @param question_definition $question Question definition object.
+     * @param $studentquizquestionid studentquiz_question id
      * @param int $userid User id.
      * @param int $highlight Highlight comment ID.
      * @param bool $privatecommenting Does the studentquiz enable private commenting?
      * @return string HTML fragment.
      */
-    public function render_comment_nav_tabs($cmid, $question, $userid, $highlight = 0, $privatecommenting = false) {
+    public function render_comment_nav_tabs($cmid, $question, $studentquizquestionid, $userid, $highlight = 0, $privatecommenting = false) {
         $renderer = $this->page->get_renderer('mod_studentquiz', 'comment');
         $tabs = [];
 
         if (utils::can_view_private_comment($cmid, $question, $privatecommenting)) {
-            $privatecommentstab = $renderer->render_comment_area($question->id, $userid, $cmid, $highlight,
+            $privatecommentstab = $renderer->render_comment_area($question->id, $studentquizquestionid, $userid, $cmid, $highlight,
                 utils::COMMENT_TYPE_PRIVATE);
             $tabs[] = [
                 'id' => 'private-comments-tab',
@@ -1687,7 +1688,7 @@ class mod_studentquiz_attempt_renderer extends mod_studentquiz_renderer {
 
         }
 
-        $publiccommentstab = $renderer->render_comment_area($question->id, $userid, $cmid, $highlight, utils::COMMENT_TYPE_PUBLIC);
+        $publiccommentstab = $renderer->render_comment_area($question->id, $studentquizquestionid, $userid, $cmid, $highlight, utils::COMMENT_TYPE_PUBLIC);
         $tabs[] = [
             'id' => 'public-comments-tab',
             'name' => get_string('publiccomments', 'mod_studentquiz'),
@@ -1696,7 +1697,7 @@ class mod_studentquiz_attempt_renderer extends mod_studentquiz_renderer {
 
         if (utils::can_view_state_history($cmid, $question)) {
             $statehistoryrenderer = $this->page->get_renderer('mod_studentquiz', 'state_history');
-            $statehistorytab = $statehistoryrenderer->state_history_table($question);
+            $statehistorytab = $statehistoryrenderer->state_history_table($studentquizquestionid);
             $tabs[] = [
                 'id' => 'state_history-tab',
                 'name' => get_string('history', 'mod_studentquiz'),
@@ -1824,7 +1825,7 @@ class mod_studentquiz_state_history_renderer extends mod_studentquiz_renderer {
      * @param question_definition $question Question definition object.
      * @return string The content render.
      */
-    public function state_history_table(question_definition $question): string {
+    public function state_history_table($studentquizquestionid): string {
 
         $table = new html_table();
         $table->head  = [
@@ -1832,7 +1833,7 @@ class mod_studentquiz_state_history_renderer extends mod_studentquiz_renderer {
             get_string('action', 'question'),
         ];
 
-        list($statehistories, $users) = utils::get_state_history_data($question);
+        list($statehistories, $users) = utils::get_state_history_data($studentquizquestionid);
 
         if (get_string_manager()->string_exists('strftimedatetimeshortaccurate', 'core_langconfig')) {
             $formatdate = get_string('strftimedatetimeshortaccurate', 'core_langconfig');
@@ -2224,11 +2225,11 @@ class mod_studentquiz_comment_renderer extends mod_studentquiz_renderer {
      * @param int $commenttype Comment Type.
      * @return string HTML fragment
      */
-    public function render_comment_area($questionid, $userid, $cmid, $highlight = 0, $commenttype = utils::COMMENT_TYPE_PUBLIC) {
+    public function render_comment_area($questionid, $studentquizquestionid, $userid, $cmid, $highlight = 0, $commenttype = utils::COMMENT_TYPE_PUBLIC) {
         $id = 'question_comment_area_' . $questionid . '_' . $commenttype;
 
-        list($question, $cm, $context, $studentquiz) = utils::get_data_for_comment_area($questionid, $cmid);
-        $commentarea = new container($studentquiz, $question, $cm, $context, null, '', $commenttype);
+        list($question, $cm, $context, $studentquiz, $studentquizquestion) = utils::get_data_for_comment_area($questionid, $cmid);
+        $commentarea = new container($studentquiz, $studentquizquestion, $question, $cm, $context, null, '', $commenttype);
         $numbertoshow = $commentarea::NUMBER_COMMENT_TO_SHOW_BY_DEFAULT;
         $canviewdeleted = $commentarea->can_view_deleted();
         $allowselfcommentrating = utils::allow_self_comment_and_rating_in_preview_mode($question, $cmid, $commenttype,
@@ -2384,7 +2385,8 @@ class mod_studentquiz_comment_renderer extends mod_studentquiz_renderer {
                 'contextid' => $context->id,
                 'userid' => $userid,
                 'numbertoshow' => container::NUMBER_COMMENT_TO_SHOW_BY_DEFAULT,
-                'cmid' => $cmid
+                'cmid' => $cmid,
+                'studentquizquestionid' => $studentquizquestionid
         ]);
     }
 }
@@ -2407,8 +2409,8 @@ class mod_studentquiz_comment_history_renderer extends mod_studentquiz_renderer 
      * @return string HTML fragment
      */
     public function render_comment_history($questionid, $commentid, $cmid) {
-        list($question, $cm, $context, $studentquiz) = utils::get_data_for_comment_area($questionid, $cmid);
-        $commentarea = new container($studentquiz, $question, $cm, $context);
+        list($question, $cm, $context, $studentquiz, $studentquizquestion) = utils::get_data_for_comment_area($questionid, $cmid);
+        $commentarea = new container($studentquiz, $studentquizquestion, $question, $cm, $context);
 
         $dbresults = $commentarea->get_history($commentid);
         $renderdata = $commentarea->extract_comment_history_to_render($dbresults);

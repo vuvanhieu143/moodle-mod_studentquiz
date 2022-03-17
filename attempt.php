@@ -121,7 +121,8 @@ if (data_submitted()) {
         $studentquizprogress = $DB->get_record('studentquiz_progress', array('questionid' => $q->id,
             'userid' => $userid, 'studentquizid' => $studentquiz->id));
         if ($studentquizprogress == false) {
-            $studentquizprogress = mod_studentquiz_get_studenquiz_progress_class($q->id, $userid, $studentquiz->id);
+            $studentquizprogress = mod_studentquiz_get_studenquiz_progress_class($q->id, $userid, $studentquiz->id,
+                    $studentquizprogress->studentquizquestionid);
         }
 
         // Any newly finished attempt is wrong when it wasn't right.
